@@ -1,173 +1,165 @@
-# Generic Repository Pattern in Java (`Repository<T>`)
+# Java 8 Streams API – Employee Data Operations
 
-A reusable, type-safe in-memory repository implementation built in Java using **Generics (`<T>`)** and the **Java Collections Framework**. It demonstrates how to store, manage, and retrieve heterogeneous domain models (such as `Student` and `Employee`) using a single generic repository class without code duplication.
+A practical guide and reference implementation for mastering Java 8 Streams using an Employee dataset.
 
----
-
-## Features
-
-- **Type Safety at Compile Time**: Catches invalid type insertions during compilation rather than failing with runtime `ClassCastException`s.
-- **Zero Type Casting**: Directly retrieves strongly typed objects (`Student`, `Employee`) without manual casting (`(Student) obj`).
-- **DRY (Don't Repeat Yourself)**: Eliminates the need to write separate `StudentRepository`, `EmployeeRepository`, etc.
-- **In-Memory Storage**: Uses an encapsulated `ArrayList<T>` for quick retrieval by index and sequential access.
-- **Clean Object Representation**: Implements readable string outputs using overridden `toString()` methods.
-
----
-
-## Project Structure
-
-```
-.
-├── Practise.java    # Complete source code (Repository<T>, Student, Employee, Main)
-├── Practise.class   # Compiled bytecode
-└── README.md        # Comprehensive project documentation
-```
+## Table of Contents
+- [Overview](#overview)
+- [Employee Model & Dataset](#employee-model--dataset)
+- [Core Stream Operations](#core-stream-operations)
+  - [1. Filtering](#1-filtering--filter)
+  - [2. Sorting](#2-sorting--sorted)
+  - [3. Grouping](#3-grouping--groupingby)
+  - [4. Transforming](#4-transforming--map)
+  - [5. Aggregating](#5-aggregating-data)
+  - [6. Chaining Multiple Operations](#6-chaining-multiple-operations)
+- [Practice Exercises & Solutions](#practice-exercises--solutions)
+- [Streams API Quick Reference](#streams-api-quick-reference)
+- [How to Run](#how-to-run)
 
 ---
 
-## Prerequisites
+## Overview
 
-- **Java Development Kit (JDK)**: JDK 8 or higher (JDK 17 / 21 / 23 recommended).
-- Check your Java installation:
-  ```bash
-  javac -version
-  java -version
-  ```
-
----
-
-## Getting Started
-
-### 1. Compile the Program
-
-Open your terminal in the project directory and compile:
-
-```bash
-javac Practise.java
-```
-
-### 2. Run the Application
-
-Execute the compiled class:
-
-```bash
-java Practise
-```
+The Java 8 Streams API enables functional-style operations on collections of elements, allowing clean, declarative, and expressive data processing pipelines. This project covers five fundamental operations:
+1. **Filter**: Select elements matching criteria.
+2. **Sort**: Order elements by single or composite fields.
+3. **Group**: Categorize elements using `Collectors.groupingBy`.
+4. **Transform**: Map elements from one type to another.
+5. **Aggregate**: Compute summary statistics such as sum, average, min, and max.
 
 ---
 
-## Expected Output
+## Employee Model & Dataset
 
-```text
-Students:
-[1 Siva, 2 Rahul]
-1 Siva
-Employees:
-[101 Ravi, 102 Priya]
-102 Priya
-```
-
----
-
-## Architecture & How It Works
-
-```
-                        ┌──────────────────────┐
-                        │    Repository<T>     │
-                        │  - items: List<T>    │
-                        │  + add(item: T)      │
-                        │  + getAll(): List<T> │
-                        │  + get(index): T     │
-                        └──────────┬───────────┘
-                                   │
-              ┌────────────────────┴────────────────────┐
-              ▼                                         ▼
-   Repository<Student>                         Repository<Employee>
-┌────────────────────────┐                  ┌────────────────────────┐
-│ items: List<Student>   │                  │ items: List<Employee>  │
-├────────────────────────┤                  ├────────────────────────┤
-│ [0] -> 1 Siva          │                  │ [0] -> 101 Ravi        │
-│ [1] -> 2 Rahul         │                  │ [1] -> 102 Priya       │
-└────────────────────────┘                  └────────────────────────┘
-```
-
-Each repository instance operates independently with its own internal list and enforces strict type constraints for its assigned type argument:
-
+### Employee Class
 ```java
-// Student repository only accepts Student instances
-Repository<Student> studentRepo = new Repository<>();
-studentRepo.add(new Student(1, "Siva"));
+class Employee {
+    private int id;
+    private String name;
+    private String department;
+    private int age;
+    private double salary;
 
-// Employee repository only accepts Employee instances
-Repository<Employee> employeeRepo = new Repository<>();
-employeeRepo.add(new Employee(101, "Ravi"));
+    // Constructor, Getters & toString()
+}
+```
+
+### Sample Data
+```java
+List<Employee> employees = Arrays.asList(
+    new Employee(1, "Siva", "IT", 22, 50000),
+    new Employee(2, "Ravi", "HR", 25, 40000),
+    new Employee(3, "Kiran", "IT", 28, 70000),
+    new Employee(4, "Arjun", "Finance", 30, 60000),
+    new Employee(5, "Priya", "HR", 24, 45000),
+    new Employee(6, "Ram", "Finance", 32, 80000),
+    new Employee(7, "Anil", "IT", 26, 65000)
+);
 ```
 
 ---
 
-## Key Code Breakdown
+## Core Stream Operations
 
-### 1. Generic Class Declaration (`class Repository<T>`)
-- `T` is a **Type Parameter** that serves as a placeholder for any reference type.
-- When instantiated as `Repository<Student>`, the Java compiler substitutes `T` with `Student`.
+### 1. Filtering – `filter()`
+Filters employees with salary > ₹50,000:
+```java
+List<Employee> result = employees.stream()
+    .filter(e -> e.getSalary() > 50000)
+    .collect(Collectors.toList());
+```
 
-### 2. Encapsulated Storage (`private List<T> items = new ArrayList<>()`)
-- Uses composition to encapsulate an internal `List<T>`.
-- The list is `private`, preventing external code from mutating the collection directly.
-
-### 3. Type-Safe Insertion (`public void add(T item)`)
-- Accepts only objects conforming to type `T`.
-- Passing any other object causes a compile-time error:
+### 2. Sorting – `sorted()`
+- **Ascending by salary:**
   ```java
-  // Compile error: incompatible types: Employee cannot be converted to Student
-  studentRepo.add(new Employee(105, "Anil"));
+  employees.stream()
+      .sorted(Comparator.comparingDouble(Employee::getSalary))
+      .forEach(System.out::println);
+  ```
+- **Descending by salary:**
+  ```java
+  employees.stream()
+      .sorted(Comparator.comparingDouble(Employee::getSalary).reversed())
+      .forEach(System.out::println);
   ```
 
-### 4. Direct Retrieval (`public T get(int index)`)
-- Returns the exact type `T`.
-- No explicit casting is needed:
+### 3. Grouping – `groupingBy()`
+Group employees by department:
+```java
+Map<String, List<Employee>> byDept = employees.stream()
+    .collect(Collectors.groupingBy(Employee::getDepartment));
+```
+
+### 4. Transforming – `map()`
+Extract names of all employees:
+```java
+List<String> names = employees.stream()
+    .map(Employee::getName)
+    .collect(Collectors.toList());
+```
+
+### 5. Aggregating Data
+- **Total Salary:**
   ```java
-  Student s = studentRepo.get(0); // No (Student) cast required!
+  double totalSalary = employees.stream().mapToDouble(Employee::getSalary).sum();
   ```
+- **Average Salary:**
+  ```java
+  double avgSalary = employees.stream().mapToDouble(Employee::getSalary).average().orElse(0);
+  ```
+- **Highest Paid Employee:**
+  ```java
+  Optional<Employee> highest = employees.stream().max(Comparator.comparingDouble(Employee::getSalary));
+  ```
+
+### 6. Chaining Multiple Operations
+Find IT employees with salary > ₹50,000, sort by salary descending, and extract names:
+```java
+List<String> result = employees.stream()
+    .filter(e -> "IT".equals(e.getDepartment()))
+    .filter(e -> e.getSalary() > 50000)
+    .sorted(Comparator.comparingDouble(Employee::getSalary).reversed())
+    .map(Employee::getName)
+    .collect(Collectors.toList());
+```
 
 ---
 
-## Why Use Generics?
+## Practice Exercises & Solutions
 
-| Aspect | Without Generics (`Object`) | With Generics (`<T>`) |
+| # | Exercise | Solution |
 |---|---|---|
-| **Class Reusability** | May require duplicate repository classes for each entity. | **One single reusable class** fits all entities. |
-| **Type Safety** | Errors only appear at runtime (`ClassCastException`). | **Compile-time checking** prevents invalid assignments. |
-| **Type Casting** | Explicit casting required: `(Student) repo.get(0)`. | **No casting required**: returns `Student` directly. |
-| **Code Readability** | Obscured by boilerplate cast operations. | Clean, self-documenting, and concise. |
+| **1** | Employees with salary > 60,000 | `employees.stream().filter(e -> e.getSalary() > 60000).collect(Collectors.toList())` |
+| **2** | Names of employees in HR | `employees.stream().filter(e -> "HR".equals(e.getDepartment())).map(Employee::getName).collect(Collectors.toList())` |
+| **3** | Employee with lowest salary | `employees.stream().min(Comparator.comparingDouble(Employee::getSalary))` |
+| **4** | Average salary of IT employees | `employees.stream().filter(e -> "IT".equals(e.getDepartment())).mapToDouble(Employee::getSalary).average().orElse(0.0)` |
+| **5** | Employee count per department | `employees.stream().collect(Collectors.groupingBy(Employee::getDepartment, Collectors.counting()))` |
+| **6** | Top 3 highest-paid employees | `employees.stream().sorted(Comparator.comparingDouble(Employee::getSalary).reversed()).limit(3).collect(Collectors.toList())` |
 
 ---
 
-## Production Extensions & Best Practices
+## Streams API Quick Reference
 
-In enterprise frameworks (like Spring Data JPA / Hibernate DAO pattern), the generic repository pattern is typically enhanced with:
-
-1. **Defensive Copies**: Returning `Collections.unmodifiableList(items)` in `getAll()` to safeguard internal state.
-2. **Key-Based Lookup**: Defining an entity interface or bounded type parameter:
-   ```java
-   interface Identifiable<ID> {
-       ID getId();
-   }
-
-   class Repository<T extends Identifiable<ID>, ID> {
-       public Optional<T> findById(ID id) { ... }
-   }
-   ```
-3. **Lambda / Predicate Filtering**:
-   ```java
-   public Optional<T> find(Predicate<T> condition) {
-       return items.stream().filter(condition).findFirst();
-   }
-   ```
-4. **Removal & Cardinality**: Methods such as `remove(T item)`, `size()`, and `isEmpty()`.
+| Method | Type | Description |
+|---|---|---|
+| `filter(Predicate)` | Intermediate | Filters elements satisfying condition |
+| `map(Function)` | Intermediate | Transforms elements into another type |
+| `sorted(Comparator)` | Intermediate | Sorts elements according to comparator |
+| `distinct()` | Intermediate | Removes duplicate elements |
+| `limit(long n)` | Intermediate | Truncates stream to first *n* elements |
+| `skip(long n)` | Intermediate | Skips first *n* elements |
+| `collect(Collector)` | Terminal | Accumulates stream into collections (List, Set, Map) |
+| `forEach(Consumer)` | Terminal | Iterates over each element |
+| `count()` | Terminal | Returns element count |
+| `min(Comparator)` / `max(Comparator)` | Terminal | Finds minimum / maximum element |
+| `reduce(BinaryOperator)` | Terminal | Aggregates elements into single value |
 
 ---
 
-## License & Attribution
+## How to Run
 
-Developed as part of the **Java Internship** practical assignments covering Core Java, Generics, and Design Patterns.
+1. Ensure **Java 8+** is installed on your machine (`java -version`).
+2. Run the program directly from the project root:
+   ```bash
+   java Practise.java
+   ```
